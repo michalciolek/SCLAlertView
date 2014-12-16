@@ -136,6 +136,9 @@ typedef NS_ENUM(NSInteger, SCLAlertViewBackground)
  */
 @property (nonatomic) SCLAlertViewBackground backgroundType;
 
+- (id)initWithView:(UIView *)view;
+- (id)initWithWindow:(UIWindow *)window;
+
 /** Warns that alerts is gone
  *
  * Warns that alerts is gone using block
