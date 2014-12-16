@@ -12,7 +12,7 @@
 typedef NSAttributedString* (^SCLAttributedFormatBlock)(NSString *value);
 typedef void (^DismissBlock)(void);
 
-@interface SCLAlertView : UIViewController
+@interface SCLAlertView : UIView
 
 /** Alert Styles
  *

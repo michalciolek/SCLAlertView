@@ -75,11 +75,23 @@ NSTimer *durationTimer;
                                  userInfo:nil];
 }
 
-- (instancetype)init
-{
-    self = [super init];
-    if (self)
-    {
+- (id)initWithView:(UIView *)view {
+    NSAssert(view, @"View must not be nil.");
+    id me = [self initWithFrame:view.bounds];
+    // We need to take care of rotation ourselfs if we're adding the HUD to a window
+    if ([view isKindOfClass:[UIWindow class]]) {
+        [self setTransformForCurrentOrientation:NO];
+    }
+    return me;
+}
+
+- (id)initWithWindow:(UIWindow *)window {
+    return [self initWithView:window];
+}
+
+- (id)initWithFrame:(CGRect)frame {
+    self = [super initWithFrame:frame];
+    if (self) {
         // Default values
         kCircleHeight = 56.0f;
         kCircleTopPosition = -12.0f;
@@ -105,15 +117,16 @@ NSTimer *durationTimer;
         _circleView = [[UIView alloc] init];
         _circleViewBackground = [[UIView alloc] init];
         _circleIconImageView = [[UIImageView alloc] init];
-        _backgroundView = [[UIImageView alloc]initWithFrame:[self mainScreenFrame]];
+        _backgroundView = [[UIImageView alloc]initWithFrame:frame];
         _buttons = [[NSMutableArray alloc] init];
         _inputs = [[NSMutableArray alloc] init];
         _activityIndicatorView = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge];
         
         // Add Subviews
-        [self.view addSubview:_contentView];
-        [self.view addSubview:_circleViewBackground];
-        [self.view addSubview:_circleView];
+        [self addSubview:_backgroundView];
+        [self addSubview:_contentView];
+        [self addSubview:_circleViewBackground];
+        [self addSubview:_circleView];
 
         [_circleView addSubview:_circleIconImageView];
         [_circleView addSubview:_activityIndicatorView];
@@ -153,6 +166,8 @@ NSTimer *durationTimer;
         _labelTitle.textColor = UIColorFromRGB(0x4D4D4D);
         _viewText.textColor = UIColorFromRGB(0x4D4D4D);
         _contentView.layer.borderColor = UIColorFromRGB(0xCCCCCC).CGColor;
+        
+        [self registerForNotifications];
     }
     return self;
 }
@@ -160,6 +175,7 @@ NSTimer *durationTimer;
 - (void)dealloc
 {
     [self removeObservers];
+    [self unregisterFromNotifications];
 }
 
 - (void)addObservers
@@ -180,11 +196,17 @@ NSTimer *durationTimer;
 
 #pragma mark - View Cycle
 
--(void)viewWillLayoutSubviews
+-(void)layoutSubviews
 {
-    [super viewWillLayoutSubviews];
-    
-    CGSize sz = [UIScreen mainScreen].bounds.size;
+    // Entirely cover the parent view
+//    UIView *parent = self.superview;
+//    
+//    if (parent) {
+//        self.frame = parent.bounds;
+//    }
+//    CGRect bounds = self.bounds;
+//    
+    CGSize sz = self.bounds.size;
     
     if (SYSTEM_VERSION_LESS_THAN(@"8.0"))
     {
@@ -203,7 +225,7 @@ NSTimer *durationTimer;
     
     // Set frames
     CGRect r;
-    if (self.view.superview != nil)
+    if (self.superview != nil)
     {
         // View is showing, position at center of screen
         r = CGRectMake((sz.width-kWindowWidth)/2, (sz.height-kWindowHeight)/2, kWindowWidth, kWindowHeight);
@@ -214,7 +236,7 @@ NSTimer *durationTimer;
         r = CGRectMake((sz.width-kWindowWidth)/2, -kWindowHeight, kWindowWidth, kWindowHeight);
     }
     
-    self.view.frame = r;
+    self.frame = r;
     _contentView.frame = CGRectMake(0.0f, kCircleHeight / 4, kWindowWidth, kWindowHeight);
     _circleViewBackground.frame = CGRectMake(kWindowWidth / 2 - kCircleHeightBackground / 2, kCircleBackgroundTopPosition, kCircleHeightBackground, kCircleHeightBackground);
     _circleViewBackground.layer.cornerRadius = _circleViewBackground.frame.size.height / 2;
@@ -361,9 +383,9 @@ NSTimer *durationTimer;
     if(_keyboardIsVisible) return;
     
     [UIView animateWithDuration:0.2f animations:^{
-        CGRect f = self.view.frame;
+        CGRect f = self.frame;
         f.origin.y -= KEYBOARD_HEIGHT + PREDICTION_BAR_HEIGHT;
-        self.view.frame = f;
+        self.frame = f;
     }];
     _keyboardIsVisible = YES;
 }
@@ -371,9 +393,9 @@ NSTimer *durationTimer;
 -(void)keyboardDidHide:(NSNotification *)notification
 {
     [UIView animateWithDuration:0.2f animations:^{
-        CGRect f = self.view.frame;
+        CGRect f = self.frame;
         f.origin.y += KEYBOARD_HEIGHT + PREDICTION_BAR_HEIGHT;
-        self.view.frame = f;
+        self.frame = f;
     }];
     _keyboardIsVisible = NO;
 }
@@ -471,18 +493,18 @@ NSTimer *durationTimer;
 
 -(SCLAlertViewResponder *)showTitle:(UIViewController *)vc image:(UIImage *)image color:(UIColor *)color title:(NSString *)title subTitle:(NSString *)subTitle duration:(NSTimeInterval)duration completeText:(NSString *)completeText style:(SCLAlertViewStyle)style
 {
-    UIWindow *window = [[UIApplication sharedApplication] keyWindow];
+    //UIWindow *window = [[UIApplication sharedApplication] keyWindow];
     
-    self.view.alpha = 0;
+    self.alpha = 0;
     
     [self setBackground];
     
     _backgroundView.frame = vc.view.bounds;
     
     // Add subviews
-    [window addSubview:_backgroundView];
-    [window addSubview:self.view];
-    [vc addChildViewController:self];
+//    [window addSubview:_backgroundView];
+//    [window addSubview:self.view];
+//    [vc addChildViewController:self];
 
     // Alert color/icon
     UIColor *viewColor;
@@ -706,7 +728,7 @@ NSTimer *durationTimer;
 
 - (BOOL)isVisible
 {
-    return (self.view.alpha > 0);
+    return (self.alpha > 0);
 }
 
 - (void)alertIsDismissed:(DismissBlock)dismissBlock
@@ -714,11 +736,7 @@ NSTimer *durationTimer;
     self.dismissBlock = dismissBlock;
 }
 
-- (CGRect)mainScreenFrame
-{
-    return self.parentViewController.view.bounds;
-//    return [UIScreen mainScreen].bounds;
-}
+
 
 #pragma mark - Background Effects
 
@@ -854,20 +872,20 @@ NSTimer *durationTimer;
 {
     [UIView animateWithDuration:0.3f animations:^{
         self.backgroundView.alpha = 0.0f;
-        self.view.alpha = 0.0f;
+        self.alpha = 0.0f;
     } completion:^(BOOL completed) {
-        [self.backgroundView removeFromSuperview];
-        [self.view removeFromSuperview];
-        [self removeFromParentViewController];
+       // [self.backgroundView removeFromSuperview];
+       // [self.view removeFromSuperview];
+        //[self removeFromParentViewController];
     }];
 }
 
 - (void)slideOutToBottom
 {
     [UIView animateWithDuration:0.3f animations:^{
-        CGRect frame = self.view.frame;
+        CGRect frame = self.frame;
         frame.origin.y += self.backgroundView.frame.size.height;
-        self.view.frame = frame;
+        self.frame = frame;
     } completion:^(BOOL completed) {
         [self fadeOut];
     }];
@@ -876,9 +894,9 @@ NSTimer *durationTimer;
 - (void)slideOutToTop
 {
     [UIView animateWithDuration:0.3f animations:^{
-        CGRect frame = self.view.frame;
+        CGRect frame = self.frame;
         frame.origin.y -= self.backgroundView.frame.size.height;
-        self.view.frame = frame;
+        self.frame = frame;
     } completion:^(BOOL completed) {
         [self fadeOut];
     }];
@@ -887,9 +905,9 @@ NSTimer *durationTimer;
 - (void)slideOutToLeft
 {
     [UIView animateWithDuration:0.3f animations:^{
-        CGRect frame = self.view.frame;
+        CGRect frame = self.frame;
         frame.origin.x -= self.backgroundView.frame.size.width;
-        self.view.frame = frame;
+        self.frame = frame;
     } completion:^(BOOL completed) {
         [self fadeOut];
     }];
@@ -898,9 +916,9 @@ NSTimer *durationTimer;
 - (void)slideOutToRight
 {
     [UIView animateWithDuration:0.3f animations:^{
-        CGRect frame = self.view.frame;
+        CGRect frame = self.frame;
         frame.origin.x += self.backgroundView.frame.size.width;
-        self.view.frame = frame;
+        self.frame = frame;
     } completion:^(BOOL completed) {
         [self fadeOut];
     }];
@@ -909,10 +927,10 @@ NSTimer *durationTimer;
 - (void)slideOutToCenter
 {
     [UIView animateWithDuration:0.3f animations:^{
-        self.view.transform =
+        self.transform =
         CGAffineTransformConcat(CGAffineTransformIdentity,
                                 CGAffineTransformMakeScale(0.1f, 0.1f));
-        self.view.alpha = 0.0f;
+        self.alpha = 0.0f;
     } completion:^(BOOL completed) {
         [self fadeOut];
     }];
@@ -921,10 +939,10 @@ NSTimer *durationTimer;
 - (void)slideOutFromCenter
 {
     [UIView animateWithDuration:0.3f animations:^{
-        self.view.transform =
+        self.transform =
         CGAffineTransformConcat(CGAffineTransformIdentity,
                                 CGAffineTransformMakeScale(3.0f, 3.0f));
-        self.view.alpha = 0.0f;
+        self.alpha = 0.0f;
     } completion:^(BOOL completed) {
         [self fadeOut];
     }];
@@ -935,14 +953,14 @@ NSTimer *durationTimer;
 - (void)fadeIn
 {
     self.backgroundView.alpha = 0.0f;
-    self.view.alpha = 0.0f;
+    self.alpha = 0.0f;
     
     [UIView animateWithDuration:0.3f
                           delay:0.0f
                         options:UIViewAnimationOptionCurveEaseIn
                      animations:^{
                          self.backgroundView.alpha = _backgroundOpacity;
-                         self.view.alpha = 1.0f;
+                         self.alpha = 1.0f;
                      }
                      completion:nil];
 }
@@ -952,7 +970,7 @@ NSTimer *durationTimer;
     //From Frame
     CGRect frame = self.backgroundView.frame;
     frame.origin.y = -self.backgroundView.frame.size.height;
-    self.view.frame = frame;
+    self.frame = frame;
     
     [UIView animateWithDuration:0.3f animations:^{
         self.backgroundView.alpha = _backgroundOpacity;
@@ -960,12 +978,12 @@ NSTimer *durationTimer;
         //To Frame
         CGRect frame = self.backgroundView.frame;
         frame.origin.y = 0;
-        self.view.frame = frame;
+        self.frame = frame;
         
-        self.view.alpha = 1.0f;
+        self.alpha = 1.0f;
     } completion:^(BOOL completed) {
         [UIView animateWithDuration:0.2f animations:^{
-            self.view.center = _backgroundView.center;
+            self.center = _backgroundView.center;
         }];
     }];
 }
@@ -975,7 +993,7 @@ NSTimer *durationTimer;
     //From Frame
     CGRect frame = self.backgroundView.frame;
     frame.origin.y = self.backgroundView.frame.size.height;
-    self.view.frame = frame;
+    self.frame = frame;
     
     [UIView animateWithDuration:0.3f animations:^{
         self.backgroundView.alpha = _backgroundOpacity;
@@ -983,12 +1001,12 @@ NSTimer *durationTimer;
         //To Frame
         CGRect frame = self.backgroundView.frame;
         frame.origin.y = 0;
-        self.view.frame = frame;
+        self.frame = frame;
         
-        self.view.alpha = 1.0f;
+        self.alpha = 1.0f;
     } completion:^(BOOL completed) {
         [UIView animateWithDuration:0.2f animations:^{
-            self.view.center = _backgroundView.center;
+            self.center = _backgroundView.center;
         }];
     }];
 }
@@ -998,7 +1016,7 @@ NSTimer *durationTimer;
     //From Frame
     CGRect frame = self.backgroundView.frame;
     frame.origin.x = -self.backgroundView.frame.size.width;
-    self.view.frame = frame;
+    self.frame = frame;
     
     [UIView animateWithDuration:0.3f animations:^{
         self.backgroundView.alpha = _backgroundOpacity;
@@ -1006,12 +1024,12 @@ NSTimer *durationTimer;
         //To Frame
         CGRect frame = self.backgroundView.frame;
         frame.origin.x = 0;
-        self.view.frame = frame;
+        self.frame = frame;
         
-        self.view.alpha = 1.0f;
+        self.alpha = 1.0f;
     } completion:^(BOOL completed) {
         [UIView animateWithDuration:0.2f animations:^{
-            self.view.center = _backgroundView.center;
+            self.center = _backgroundView.center;
         }];
     }];
 }
@@ -1021,7 +1039,7 @@ NSTimer *durationTimer;
     //From Frame
     CGRect frame = self.backgroundView.frame;
     frame.origin.x = self.backgroundView.frame.size.width;
-    self.view.frame = frame;
+    self.frame = frame;
     
     [UIView animateWithDuration:0.3f animations:^{
         self.backgroundView.alpha = _backgroundOpacity;
@@ -1029,12 +1047,12 @@ NSTimer *durationTimer;
         //To Frame
         CGRect frame = self.backgroundView.frame;
         frame.origin.x = 0;
-        self.view.frame = frame;
+        self.frame = frame;
         
-        self.view.alpha = 1.0f;
+        self.alpha = 1.0f;
     } completion:^(BOOL completed) {
         [UIView animateWithDuration:0.2f animations:^{
-            self.view.center = _backgroundView.center;
+            self.center = _backgroundView.center;
         }];
     }];
 }
@@ -1042,20 +1060,20 @@ NSTimer *durationTimer;
 - (void)slideInFromCenter
 {
     //From
-    self.view.transform = CGAffineTransformConcat(CGAffineTransformIdentity,
+    self.transform = CGAffineTransformConcat(CGAffineTransformIdentity,
                                 CGAffineTransformMakeScale(3.0f, 3.0f));
-    self.view.alpha = 0.0f;
+    self.alpha = 0.0f;
     
     [UIView animateWithDuration:0.3f animations:^{
         self.backgroundView.alpha = _backgroundOpacity;
         
         //To
-        self.view.transform = CGAffineTransformConcat(CGAffineTransformIdentity,
+        self.transform = CGAffineTransformConcat(CGAffineTransformIdentity,
                                                       CGAffineTransformMakeScale(1.0f, 1.0f));
-        self.view.alpha = 1.0f;
+        self.alpha = 1.0f;
     } completion:^(BOOL completed) {
         [UIView animateWithDuration:0.2f animations:^{
-            self.view.center = _backgroundView.center;
+            self.center = _backgroundView.center;
         }];
     }];
 }
@@ -1063,22 +1081,84 @@ NSTimer *durationTimer;
 - (void)slideInToCenter
 {
     //From
-    self.view.transform = CGAffineTransformConcat(CGAffineTransformIdentity,
+    self.transform = CGAffineTransformConcat(CGAffineTransformIdentity,
                                                   CGAffineTransformMakeScale(0.1f, 0.1f));
-    self.view.alpha = 0.0f;
+    self.alpha = 0.0f;
     
     [UIView animateWithDuration:0.3f animations:^{
         self.backgroundView.alpha = _backgroundOpacity;
         
         //To
-        self.view.transform = CGAffineTransformConcat(CGAffineTransformIdentity,
+        self.transform = CGAffineTransformConcat(CGAffineTransformIdentity,
                                                       CGAffineTransformMakeScale(1.0f, 1.0f));
-        self.view.alpha = 1.0f;
+        self.alpha = 1.0f;
     } completion:^(BOOL completed) {
         [UIView animateWithDuration:0.2f animations:^{
-            self.view.center = _backgroundView.center;
+            self.center = _backgroundView.center;
         }];
     }];
+}
+
+#pragma mark - Notifications
+
+- (void)registerForNotifications {
+    NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
+    
+    [nc addObserver:self selector:@selector(deviceOrientationDidChange:)
+               name:UIDeviceOrientationDidChangeNotification
+             object:nil];
+}
+
+- (void)unregisterFromNotifications {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
+- (void)deviceOrientationDidChange:(NSNotification *)notification {
+    UIView *superview = self.superview;
+    
+    if (!superview) {
+        return;
+    } else if ([superview isKindOfClass:[UIWindow class]]) {
+        [self setTransformForCurrentOrientation:YES];
+    } else {
+        self.bounds = self.superview.bounds;
+        [self setNeedsDisplay];
+    }
+}
+
+- (void)setTransformForCurrentOrientation:(BOOL)animated {
+    // Stay in sync with the superview
+    if (self.superview) {
+        self.bounds = self.superview.bounds;
+        [self setNeedsDisplay];
+    }
+    
+    UIInterfaceOrientation orientation = [UIApplication sharedApplication].statusBarOrientation;
+    CGFloat radians = 0;
+    if (UIInterfaceOrientationIsLandscape(orientation)) {
+        if (orientation == UIInterfaceOrientationLandscapeLeft) {
+            radians = -(CGFloat)M_PI_2;
+        } else {
+            radians = (CGFloat)M_PI_2;
+        }
+        // Window coordinates differ!
+        self.bounds = CGRectMake(0, 0, self.bounds.size.height, self.bounds.size.width);
+    } else {
+        if (orientation == UIInterfaceOrientationPortraitUpsideDown) {
+            radians = (CGFloat)M_PI;
+        } else {
+            radians = 0;
+        }
+    }
+    //rotationTransform = CGAffineTransformMakeRotation(radians);
+    
+    if (animated) {
+        [UIView beginAnimations:nil context:nil];
+    }
+    //[self setTransform:rotationTransform];
+    if (animated) {
+        [UIView commitAnimations];
+    }
 }
 
 @end
