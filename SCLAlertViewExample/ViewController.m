@@ -230,6 +230,11 @@ NSString *kAttributeTitle = @"Attributed string operation successfully completed
     
     [alert setShowAnimationType:SlideInToCenter];
     [alert setHideAnimationType:SlideOutFromCenter];
+     alert.backgroundType = Transparent;
+    
+    [alert addButton:@"lol" actionBlock:^{
+        NSLog(@"dddd");
+    }];
     
     [alert showWaiting:self title:@"Waiting..."
             subTitle:@"Blah de blah de blah, blah. Blah de blah de"
