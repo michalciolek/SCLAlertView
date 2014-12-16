@@ -78,6 +78,7 @@ NSTimer *durationTimer;
 - (id)initWithView:(UIView *)view {
     NSAssert(view, @"View must not be nil.");
     id me = [self initWithFrame:view.bounds];
+    [view addSubview:self];
     // We need to take care of rotation ourselfs if we're adding the HUD to a window
     if ([view isKindOfClass:[UIWindow class]]) {
         [self setTransformForCurrentOrientation:NO];
