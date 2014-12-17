@@ -110,7 +110,7 @@ NSTimer *durationTimer;
         _hideAnimationType = FadeOut;
         _showAnimationType = SlideInFromTop;
         _backgroundType = Shadow;
-
+        
         // Init
         _labelTitle = [[UILabel alloc] init];
         _viewText = [[UITextView alloc] init];
@@ -128,19 +128,19 @@ NSTimer *durationTimer;
         [self addSubview:_contentView];
         [self addSubview:_circleViewBackground];
         [self addSubview:_circleView];
-
+        
         [_circleView addSubview:_circleIconImageView];
         [_circleView addSubview:_activityIndicatorView];
         [_contentView addSubview:_labelTitle];
         [_contentView addSubview:_viewText];
         
-		// Content View
+        // Content View
         _contentView.layer.cornerRadius = 5.0f;
         _contentView.layer.masksToBounds = YES;
         _contentView.layer.borderWidth = 0.5f;
         
-		// Circle View Background
-		_circleViewBackground.backgroundColor = [UIColor whiteColor];
+        // Circle View Background
+        _circleViewBackground.backgroundColor = [UIColor whiteColor];
         
         // Background View
         _backgroundView.userInteractionEnabled = YES;
@@ -161,12 +161,14 @@ NSTimer *durationTimer;
             _viewText.textContainerInset = UIEdgeInsetsZero;
             _viewText.textContainer.lineFragmentPadding = 0;
         }
-    
+        
         // Colors
         _contentView.backgroundColor = [UIColor whiteColor];
         _labelTitle.textColor = UIColorFromRGB(0x4D4D4D);
         _viewText.textColor = UIColorFromRGB(0x4D4D4D);
         _contentView.layer.borderColor = UIColorFromRGB(0xCCCCCC).CGColor;
+        
+        self.alpha = 0;
         
         [self registerForNotifications];
     }
@@ -199,14 +201,12 @@ NSTimer *durationTimer;
 
 -(void)layoutSubviews
 {
-    // Entirely cover the parent view
-//    UIView *parent = self.superview;
-//    
-//    if (parent) {
-//        self.frame = parent.bounds;
-//    }
-//    CGRect bounds = self.bounds;
-//    
+    UIView *parent = self.superview;
+    
+    if (parent) {
+        self.frame = parent.bounds;
+    }
+    
     CGSize sz = self.bounds.size;
     
     if (SYSTEM_VERSION_LESS_THAN(@"8.0"))
@@ -237,15 +237,14 @@ NSTimer *durationTimer;
         r = CGRectMake((sz.width-kWindowWidth)/2, -kWindowHeight, kWindowWidth, kWindowHeight);
     }
     
-    self.frame = r;
-    _contentView.frame = CGRectMake(0.0f, kCircleHeight / 4, kWindowWidth, kWindowHeight);
-    _circleViewBackground.frame = CGRectMake(kWindowWidth / 2 - kCircleHeightBackground / 2, kCircleBackgroundTopPosition, kCircleHeightBackground, kCircleHeightBackground);
+    _contentView.frame = r;
+    _circleViewBackground.frame = CGRectMake(kWindowWidth / 2 - kCircleHeightBackground / 2 + r.origin.x, kCircleBackgroundTopPosition + r.origin.y, kCircleHeightBackground, kCircleHeightBackground);
     _circleViewBackground.layer.cornerRadius = _circleViewBackground.frame.size.height / 2;
-    _circleView.frame = CGRectMake(kWindowWidth / 2 - kCircleHeight / 2, kCircleTopPosition, kCircleHeight, kCircleHeight);
+    _circleView.frame = CGRectMake(kWindowWidth / 2 - kCircleHeight / 2 + r.origin.x, kCircleTopPosition+ r.origin.y, kCircleHeight, kCircleHeight);
     _circleView.layer.cornerRadius = self.circleView.frame.size.height / 2;
-    _circleIconImageView.frame = CGRectMake(kCircleHeight / 2 - kCircleIconHeight / 2, kCircleHeight / 2 - kCircleIconHeight / 2, kCircleIconHeight, kCircleIconHeight);
+    _circleIconImageView.frame = CGRectMake(kCircleHeight / 2 - kCircleIconHeight / 2 , kCircleHeight / 2 - kCircleIconHeight / 2 , kCircleIconHeight, kCircleIconHeight);
     _activityIndicatorView.frame =CGRectMake(kCircleHeight / 2 - kActivityIndicatorHeight / 2, kCircleHeight / 2 - kActivityIndicatorHeight / 2, kActivityIndicatorHeight, kActivityIndicatorHeight);
-
+    
     _labelTitle.frame = CGRectMake(12.0f, kCircleHeight / 2 + 12.0f, kWindowWidth - 24.0f, 40.0f);
     _viewText.frame = CGRectMake(12.0f, 74.0f, kWindowWidth - 24.0f, kTextHeight);
     
@@ -254,7 +253,7 @@ NSTimer *durationTimer;
     {
         _viewText.frame = CGRectMake(12.0f, kCircleHeight, kWindowWidth - 24.0f, kTextHeight);
     }
-        
+    
     // Text fields
     CGFloat y = 74.0f + kTextHeight + 14.0f;
     for (UITextField *textField in _inputs)
@@ -280,7 +279,7 @@ NSTimer *durationTimer;
     if (_shouldDismissOnTapOutside)
     {
         BOOL hide = _shouldDismissOnTapOutside;
-
+        
         for(UITextField *txt in _inputs)
         {
             // Check if there is any keyboard on screen and dismiss
@@ -413,7 +412,7 @@ NSTimer *durationTimer;
     btn.layer.masksToBounds = YES;
     [btn setTitle:title forState:UIControlStateNormal];
     btn.titleLabel.font = [UIFont fontWithName:kButtonFont size:14.0f];
-
+    
     [_contentView addSubview:btn];
     [_buttons addObject:btn];
     
@@ -440,7 +439,7 @@ NSTimer *durationTimer;
     btn.actionType = Block;
     btn.actionBlock = action;
     [btn addTarget:self action:@selector(buttonTapped:) forControlEvents:UIControlEventTouchUpInside];
-
+    
     return btn;
 }
 
@@ -503,14 +502,14 @@ NSTimer *durationTimer;
     _backgroundView.frame = vc.view.bounds;
     
     // Add subviews
-//    [window addSubview:_backgroundView];
-//    [window addSubview:self.view];
-//    [vc addChildViewController:self];
-
+    //    [window addSubview:_backgroundView];
+    //    [window addSubview:self.view];
+    //    [vc addChildViewController:self];
+    
     // Alert color/icon
     UIColor *viewColor;
     UIImage *iconImage;
-
+    
     // Icon style
     switch (style)
     {
@@ -518,27 +517,27 @@ NSTimer *durationTimer;
             viewColor = UIColorFromRGB(0x22B573);
             iconImage = SCLAlertViewStyleKit.imageOfCheckmark;
             break;
-
+            
         case Error:
             viewColor = UIColorFromRGB(0xC1272D);
             iconImage = SCLAlertViewStyleKit.imageOfCross;
             break;
-
+            
         case Notice:
             viewColor = UIColorFromRGB(0x727375);
             iconImage = SCLAlertViewStyleKit.imageOfNotice;
             break;
-
+            
         case Warning:
             viewColor = UIColorFromRGB(0xFFD110);
             iconImage = SCLAlertViewStyleKit.imageOfWarning;
             break;
-
+            
         case Info:
             viewColor = UIColorFromRGB(0x2866BF);
             iconImage = SCLAlertViewStyleKit.imageOfInfo;
             break;
-
+            
         case Edit:
             viewColor = UIColorFromRGB(0xA429FF);
             iconImage = SCLAlertViewStyleKit.imageOfEdit;
@@ -554,13 +553,13 @@ NSTimer *durationTimer;
             kCircleIconHeight = kCircleIconHeight * 2;
             break;
     }
-
+    
     // Title
     if([title stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]].length > 0)
     {
         self.labelTitle.text = title;
     }
-
+    
     // Subtitle
     if([subTitle stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]].length > 0)
     {
@@ -620,13 +619,13 @@ NSTimer *durationTimer;
             [_audioPlayer play];
         }
     }
-
+    
     // Add button, if necessary
     if(completeText != nil)
     {
         [self addDoneButtonWithTitle:completeText];
     }
-
+    
     // Alert view colour and images
     self.circleView.backgroundColor = viewColor;
     
@@ -667,15 +666,15 @@ NSTimer *durationTimer;
     {
         [durationTimer invalidate];
         durationTimer = [NSTimer scheduledTimerWithTimeInterval:duration
-                                                          target:self
-                                                        selector:@selector(hideView)
-                                                        userInfo:nil
-                                                         repeats:NO];
+                                                         target:self
+                                                       selector:@selector(hideView)
+                                                       userInfo:nil
+                                                        repeats:NO];
     }
-
+    
     // Show the alert view
     [self showView];
-
+    
     // Chainable objects
     return [[SCLAlertViewResponder alloc] init:self];
 }
@@ -753,10 +752,10 @@ NSTimer *durationTimer;
 {
     UIImage *image = [UIImage convertViewToImage];
     UIImage *blurSnapshotImage = [image applyBlurWithRadius:5.0f
-                                         tintColor:[UIColor colorWithWhite:0.2f
-                                                                     alpha:0.7f]
-                             saturationDeltaFactor:1.8f
-                                         maskImage:nil];
+                                                  tintColor:[UIColor colorWithWhite:0.2f
+                                                                              alpha:0.7f]
+                                      saturationDeltaFactor:1.8f
+                                                  maskImage:nil];
     
     _backgroundView.image = blurSnapshotImage;
     _backgroundView.alpha = 0.0f;
@@ -875,8 +874,8 @@ NSTimer *durationTimer;
         self.backgroundView.alpha = 0.0f;
         self.alpha = 0.0f;
     } completion:^(BOOL completed) {
-       // [self.backgroundView removeFromSuperview];
-       // [self.view removeFromSuperview];
+        // [self.backgroundView removeFromSuperview];
+        // [self.view removeFromSuperview];
         //[self removeFromParentViewController];
     }];
 }
@@ -1062,7 +1061,7 @@ NSTimer *durationTimer;
 {
     //From
     self.transform = CGAffineTransformConcat(CGAffineTransformIdentity,
-                                CGAffineTransformMakeScale(3.0f, 3.0f));
+                                             CGAffineTransformMakeScale(3.0f, 3.0f));
     self.alpha = 0.0f;
     
     [UIView animateWithDuration:0.3f animations:^{
@@ -1070,7 +1069,7 @@ NSTimer *durationTimer;
         
         //To
         self.transform = CGAffineTransformConcat(CGAffineTransformIdentity,
-                                                      CGAffineTransformMakeScale(1.0f, 1.0f));
+                                                 CGAffineTransformMakeScale(1.0f, 1.0f));
         self.alpha = 1.0f;
     } completion:^(BOOL completed) {
         [UIView animateWithDuration:0.2f animations:^{
@@ -1083,7 +1082,7 @@ NSTimer *durationTimer;
 {
     //From
     self.transform = CGAffineTransformConcat(CGAffineTransformIdentity,
-                                                  CGAffineTransformMakeScale(0.1f, 0.1f));
+                                             CGAffineTransformMakeScale(0.1f, 0.1f));
     self.alpha = 0.0f;
     
     [UIView animateWithDuration:0.3f animations:^{
@@ -1091,7 +1090,7 @@ NSTimer *durationTimer;
         
         //To
         self.transform = CGAffineTransformConcat(CGAffineTransformIdentity,
-                                                      CGAffineTransformMakeScale(1.0f, 1.0f));
+                                                 CGAffineTransformMakeScale(1.0f, 1.0f));
         self.alpha = 1.0f;
     } completion:^(BOOL completed) {
         [UIView animateWithDuration:0.2f animations:^{
